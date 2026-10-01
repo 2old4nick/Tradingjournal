@@ -1193,6 +1193,28 @@
     .gf-cat[data-cat="eigene"].active    { color: var(--green); }
     .gf-cat[data-cat="Alle"].active      { color: var(--text-primary); }
 
+    .gf-avoid {
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .gf-avoid:hover { color: var(--text-primary); background: var(--bg-hover); }
+    .gf-avoid.active {
+      background: var(--bg-card);
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+    .gf-avoid[data-avoid="alle"].active           { color: var(--accent); }
+    .gf-avoid[data-avoid="ohne-vermeidbare"].active { color: var(--red); }
+
     .gf-stadium {
       background: transparent;
       border: none;
@@ -2621,6 +2643,12 @@
           <svg id="privacy-icon-off" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
         </button>
 
+        <!-- Vermeidbarer-Loss-Filter -->
+        <div class="global-filter" id="global-filter-avoidable">
+          <button class="gf-avoid active" data-avoid="alle">Alle</button>
+          <button class="gf-avoid" data-avoid="ohne-vermeidbare">ohne vermeidbare</button>
+        </div>
+
         <!-- Setup-Kategorie-Filter -->
         <div class="global-filter" id="global-filter-cat">
           <button class="gf-cat active" data-cat="Trendflow">Trendflow</button>
@@ -3508,16 +3536,22 @@ CREATE POLICY "allow_all" ON trades
         </div>
         <div class="form-field">
           <label class="form-label" for="trade-setup">Setup / Strategie</label>
-          <select id="trade-setup" class="form-select">
-            <option value="Trendfortsetzung" selected>Trendfortsetzung</option>
-            <option value="Trendfortsetzung im Momentum">Trendfortsetzung im Momentum</option>
-            <option value="Breakout">Breakout</option>
-            <option value="FakeOut">FakeOut</option>
-            <option value="Trendwechsel">Trendwechsel</option>
-            <option value="Bounce">Bounce</option>
-            <option value="Newskorrektur">Newskorrektur</option>
-            <option value="Intraday">Intraday</option>
-          </select>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <select id="trade-setup" class="form-select" style="flex:1;">
+              <option value="Trendfortsetzung" selected>Trendfortsetzung</option>
+              <option value="Trendfortsetzung im Momentum">Trendfortsetzung im Momentum</option>
+              <option value="Breakout">Breakout</option>
+              <option value="FakeOut">FakeOut</option>
+              <option value="Trendwechsel">Trendwechsel</option>
+              <option value="Bounce">Bounce</option>
+              <option value="Newskorrektur">Newskorrektur</option>
+              <option value="Intraday">Intraday</option>
+            </select>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary);cursor:pointer;white-space:nowrap;">
+              <input type="checkbox" id="trade-vermeidbarer-loss" style="accent-color:var(--accent);cursor:pointer;">
+              vermeidbarer Loss
+            </label>
+          </div>
         </div>
         <div class="form-field" id="predecessor-field" style="flex:0 0 auto; display:none; flex-direction:column; gap:6px; min-width:160px;">
           <label class="form-label" style="white-space:nowrap">Add-on von</label>
@@ -3670,6 +3704,7 @@ CREATE POLICY "allow_all" ON trades
     activeTypFilter:     'Live',
     activeStadiumFilter: 'Alle',
     activeCatFilter:     'Trendflow',
+    avoidableFilter:     'alle',   // alle | ohne-vermeidbare
     pnlVisible:          false,
     activeTimeRange:     'week',   // today | week | month | year | all | custom
     timeFrom:            null,    // Date für custom
@@ -3741,6 +3776,9 @@ CREATE POLICY "allow_all" ON trades
       trades = trades.filter(t => !predecessorIds.has(t.id));
     }
 
+    if (AppState.avoidableFilter === 'ohne-vermeidbare')
+      trades = trades.filter(t => !t.vermeidbarer_loss);
+
     if (AppState.mentorMode) {
       trades = trades.filter(t => !EIGENE_SETUPS.includes(t.setup));
       trades = trades.filter(t => t.symbol === 'GBPJPY');
@@ -3778,6 +3816,15 @@ CREATE POLICY "allow_all" ON trades
       refreshAllViews();
     });
   }
+
+  document.querySelectorAll('.gf-avoid').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.gf-avoid').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      AppState.avoidableFilter = btn.dataset.avoid;
+      refreshAllViews();
+    });
+  });
 
   document.querySelectorAll('.gf-cat').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -4321,6 +4368,7 @@ CREATE POLICY "allow_all" ON trades
     const session    = document.getElementById('trade-session').value  || null;
     const setup      = document.getElementById('trade-setup').value    || null;
     const predecessor_id = document.getElementById('trade-predecessor').value || null;
+    const vermeidbarerLoss = document.getElementById('trade-vermeidbarer-loss').checked;
 
     // Checkliste sammeln
     const checklist = {};
@@ -4345,6 +4393,7 @@ CREATE POLICY "allow_all" ON trades
       pnl:               status === 'closed' ? netPnl   : null,  // net P&L als Hauptwert
       rr:                rrActual,
       session, setup, predecessor_id, notes, review, typ, stadium,
+      vermeidbarer_loss: vermeidbarerLoss,
       checklist: checklistData,
       screenshot_entry:  screenshotEntryBase64 || null,
       screenshot_exit:   screenshotExitBase64  || null,
@@ -4385,6 +4434,7 @@ CREATE POLICY "allow_all" ON trades
     document.getElementById('trade-session').value = 'london';
     document.getElementById('trade-setup').value   = 'Trendfortsetzung';
     document.getElementById('trade-predecessor').value  = '';
+    document.getElementById('trade-vermeidbarer-loss').checked = false;
     document.getElementById('trade-typ').value     = 'Live';
     document.getElementById('trade-stadium').value = 'Challenge';
     document.getElementById('trade-risk').value    = '1000';
@@ -4418,6 +4468,7 @@ CREATE POLICY "allow_all" ON trades
     document.getElementById('trade-pnl').value        = t.gross_pnl || '';
     document.getElementById('trade-commission').value  = t.commission || '';
     document.getElementById('trade-setup').value     = t.setup     || 'Trendfortsetzung';
+    document.getElementById('trade-vermeidbarer-loss').checked = !!t.vermeidbarer_loss;
     document.getElementById('trade-predecessor').value   = t.predecessor_id || '';
     const predField = document.getElementById('predecessor-field');
     if (predField) predField.style.display = t.setup === 'Intraday' ? 'flex' : 'none';
