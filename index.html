@@ -1507,6 +1507,7 @@
     .app-shell.mentor-mode .tl-action-btns,
     .app-shell.mentor-mode .analyse-form-card,
     .app-shell.mentor-mode .analyse-card-del { display: none !important; }
+    .app-shell.mentor-mode .analyse-card-confirm { display: none !important; }
 
     .app-shell.mentor-mode #trade-notes,
     .app-shell.mentor-mode #trade-review {
@@ -2247,6 +2248,8 @@
 
     .cal-analyse-badge.london  { background: rgba(34, 201, 122, 0.35); border: 1px solid var(--green); color: var(--green); }
     .cal-analyse-badge.new_york { background: rgba(79, 142, 247, 0.25); border: 1px solid var(--accent); color: var(--accent); }
+    .cal-analyse-badge.london.filled  { background: var(--green);  border-color: var(--green);  color: #07170f; }
+    .cal-analyse-badge.new_york.filled { background: var(--accent); border-color: var(--accent); color: #07101f; }
 
     .cal-analyse-badge:hover { transform: scale(1.2); opacity: 0.9; }
 
@@ -3518,7 +3521,7 @@ CREATE POLICY "allow_all" ON trades
     <div class="form-section">
       <div class="form-section-title">Notizen</div>
 
-      <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr auto;">
+      <div class="form-row" style="grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) auto;">
         <div class="form-field">
           <label class="form-label" for="trade-typ">Typ</label>
           <select id="trade-typ" class="form-select">
@@ -3537,7 +3540,7 @@ CREATE POLICY "allow_all" ON trades
         <div class="form-field">
           <label class="form-label" for="trade-setup">Setup / Strategie</label>
           <div style="display:flex; align-items:center; gap:10px;">
-            <select id="trade-setup" class="form-select" style="flex:1;">
+            <select id="trade-setup" class="form-select" style="flex:1; min-width:0;">
               <option value="Trendfortsetzung" selected>Trendfortsetzung</option>
               <option value="Trendfortsetzung im Momentum">Trendfortsetzung im Momentum</option>
               <option value="Breakout">Breakout</option>
@@ -5222,7 +5225,7 @@ CREATE POLICY "allow_all" ON trades
       const badgesHTML = dayAnalysen.length > 0
         ? `<div class="cal-day-analyse-badges">
             ${dayAnalysen.map(a =>
-              `<div class="cal-analyse-badge ${a.session}" data-analyse-id="${a.id}" title="${a.session === 'london' ? 'London' : 'New York'} Analyse">
+              `<div class="cal-analyse-badge ${a.session}${a.aufgegangen ? ' filled' : ''}" data-analyse-id="${a.id}" title="${a.session === 'london' ? 'London' : 'New York'} Analyse${a.aufgegangen ? ' (aufgegangen)' : ''}">
                 ${a.session === 'london' ? 'L' : 'N'}
               </div>`
             ).join('')}
@@ -5424,6 +5427,7 @@ CREATE POLICY "allow_all" ON trades
       date,
       session,
       text,
+      aufgegangen: false,
       screenshot: analyseScreenshotB64 || null,
       created_at: new Date().toISOString(),
     };
@@ -5501,7 +5505,13 @@ CREATE POLICY "allow_all" ON trades
             <span class="analyse-card-date">${new Date(a.date + 'T12:00:00').toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'})}</span>
             <span class="analyse-card-session ${a.session}">${sessLabel[a.session] || a.session}</span>
           </div>
-          <button class="analyse-card-del" data-id="${a.id}">Löschen</button>
+          <div style="display:flex;align-items:center;gap:14px;">
+            <label class="analyse-card-confirm" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary);cursor:pointer;white-space:nowrap;">
+              <input type="checkbox" class="analyse-card-confirm-cb" data-id="${a.id}" ${a.aufgegangen ? 'checked' : ''} style="accent-color:var(--green);cursor:pointer;">
+              aufgegangen
+            </label>
+            <button class="analyse-card-del" data-id="${a.id}">Löschen</button>
+          </div>
         </div>
         <div class="analyse-card-text">${a.text}</div>
         ${a.screenshot ? `<img src="${a.screenshot}" class="analyse-card-img" alt="Screenshot">` : ''}
@@ -5521,6 +5531,21 @@ CREATE POLICY "allow_all" ON trades
           try { await SB.from('analysen').delete().eq('id', id); } catch(e) {}
         }
         renderAnalyseList();
+      });
+    });
+
+    // "aufgegangen"-Checkbox
+    list.querySelectorAll('.analyse-card-confirm-cb').forEach(cb => {
+      cb.addEventListener('change', async () => {
+        const id = cb.dataset.id;
+        const checked = cb.checked;
+        const a = analyseList.find(x => x.id === id);
+        if (a) a.aufgegangen = checked;
+        if (SB) {
+          try { await SB.from('analysen').update({ aufgegangen: checked }).eq('id', id); }
+          catch(e) { showToast('Speicherfehler: ' + e.message, 'error'); }
+        }
+        if (typeof renderCalendar === 'function') renderCalendar();
       });
     });
   }
