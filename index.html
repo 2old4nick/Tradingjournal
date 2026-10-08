@@ -2677,8 +2677,8 @@
         <!-- Globaler Zeitraum-Filter -->
         <div class="global-filter" id="global-filter-time">
           <button class="gf-time" data-range="today">Heute</button>
-          <button class="gf-time active" data-range="week">Woche</button>
-          <button class="gf-time" data-range="month">Monat</button>
+          <button class="gf-time" data-range="week">Woche</button>
+          <button class="gf-time active" data-range="month">Monat</button>
           <button class="gf-time" data-range="year">Jahr</button>
           <button class="gf-time" data-range="all">Alle</button>
           <button class="gf-time gf-time-custom" data-range="custom" id="gf-time-custom-btn">
@@ -3709,7 +3709,7 @@ CREATE POLICY "allow_all" ON trades
     activeCatFilter:     'Trendflow',
     avoidableFilter:     'alle',   // alle | ohne-vermeidbare
     pnlVisible:          false,
-    activeTimeRange:     'week',   // today | week | month | year | all | custom
+    activeTimeRange:     'month',  // today | week | month | year | all | custom
     timeFrom:            null,    // Date für custom
     timeTo:              null,    // Date für custom
   };
