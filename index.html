@@ -5263,7 +5263,7 @@ CREATE POLICY "allow_all" ON trades
       return `<div class="${cls}" data-key="${key}">
         ${badgesHTML}
         <div class="cal-day-num">${date.getDate()}</div>
-        ${pnl != null ? `<div class="cal-day-pnl" style="color:${pnlColor};font-weight:700">${AppState.pnlVisible ? (pnl>=0?'+':'')+'$'+pnl.toFixed(2) : '$*****'}</div>` : ''}
+        ${pnl != null ? `<div class="cal-day-pnl" style="color:${pnlColor};font-weight:700">${AppState.pnlVisible ? (pnl>=0?'+':'')+'$'+pnl.toFixed(2) : (() => { const dayR = data.trades.reduce((s,t) => s + (parseFloat(t.rr)||0), 0); return (dayR>=0?'+':'')+dayR.toFixed(2)+'R'; })()}</div>` : ''}
         ${count > 0 ? (() => {
           const dayW  = data.trades.filter(t => !isBreakEven(t) && (parseFloat(t.pnl)||0) > 0).length;
           const dayL  = data.trades.filter(t => !isBreakEven(t) && (parseFloat(t.pnl)||0) < 0).length;
