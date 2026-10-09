@@ -2122,37 +2122,6 @@
       font-family: var(--font-mono);
     }
 
-    .cal-kpis {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .cal-kpi {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      padding: 8px 16px;
-      text-align: center;
-    }
-
-    .cal-kpi-label {
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--text-muted);
-      margin-bottom: 3px;
-    }
-
-    .cal-kpi-value {
-      font-family: var(--font-mono);
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-
-    .cal-kpi-value.pos { color: var(--green); }
-    .cal-kpi-value.neg { color: var(--red); }
 
     .cal-weekdays {
       display: grid;
@@ -2809,7 +2778,6 @@
             </button>
             <button class="btn btn-ghost" id="cal-today" style="font-size:12px;padding:6px 12px">Heute</button>
           </div>
-          <div class="cal-kpis" id="cal-kpis"></div>
         </div>
 
         <!-- Wochentag-Kopfzeile -->
@@ -5155,34 +5123,10 @@ CREATE POLICY "allow_all" ON trades
   function renderCalendar() {
     const grid   = document.getElementById('cal-grid');
     const label  = document.getElementById('cal-month-label');
-    const kpisEl = document.getElementById('cal-kpis');
     if (!grid) return;
 
     label.textContent = `${MONTHS_DE[calMonth]} ${calYear}`;
     const dayMap = buildDayMap();
-
-    // Monats-KPIs
-    const monthTrades = liveTrades().filter(t => {
-      if (t.status !== 'closed' || t.pnl == null) return false;
-      const d = new Date(t.date_open);
-      return d.getFullYear() === calYear && d.getMonth() === calMonth;
-    });
-    const monthPnl  = monthTrades.reduce((s,t) => s + (parseFloat(t.pnl)||0), 0);
-    const monthWins = monthTrades.filter(t => parseFloat(t.pnl) > 0).length;
-    const monthWR   = monthTrades.length
-      ? ((monthWins / monthTrades.length)*100).toFixed(0)+'%' : '–';
-    const monthRRSum = monthTrades.reduce((s,t) => s + (parseFloat(t.rr)||0), 0);
-    const monthRR   = monthTrades.length ? (monthRRSum >= 0 ? '+' : '') + monthRRSum.toFixed(2) + 'R' : '–';
-
-    kpisEl.innerHTML = [
-      { label:'Monat R:R',  value:monthRR,  cls:monthRRSum >= 0 ? 'pos' : 'neg' },
-      { label:'Monat P&L', value:(monthPnl>=0?'+':'')+'$'+monthPnl.toFixed(2), cls:monthPnl>=0?'pos':'neg' },
-      { label:'Trades',    value:monthTrades.length, cls:'' },
-      { label:'Winrate',   value:monthWR, cls:'' },
-    ].map(k=>`<div class="cal-kpi">
-      <div class="cal-kpi-label">${k.label}</div>
-      <div class="cal-kpi-value ${k.cls}">${k.value}</div>
-    </div>`).join('');
 
     // Grid aufbauen (Mo–Fr, Wochenenden ausgeblendet)
     const firstDay  = new Date(calYear, calMonth, 1);
