@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Login-Test</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2"></script>
+<style>
+  body{ font-family: sans-serif; margin: 40px; }
+  [hidden]{ display:none !important; }
+  label{ display:block; margin: 12px 0 5px; }
+  input{ padding: 6px; width: 260px; }
+  button{ margin-top: 14px; padding: 6px 14px; }
+  .status{ margin-top: 10px; color: #a00; }
+</style>
+</head>
+<body>
+
+<!-- Testseite: nur Anmeldeformular, aufgebaut wie beim Ausgaben-Tracker -->
+<div id="authView" hidden>
+  <h2>ANMELDEN (Test)</h2>
+  <form id="authForm">
+    <label for="authEmail">E-Mail</label>
+    <input type="email" id="authEmail" required autocomplete="username">
+    <label for="authPassword">Passwort</label>
+    <input type="password" id="authPassword" required autocomplete="current-password" minlength="6">
+    <button type="submit" id="authSubmitBtn">ANMELDEN</button>
+    <div class="status" id="authStatus"></div>
+  </form>
+</div>
+
+<div id="appView" hidden>
+  <h2>Angemeldet</h2>
+  <p>Die Testseite hat dich angemeldet. Abmelden, dann Seite neu laden.</p>
+  <button id="signOutBtn">Abmelden</button>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://fsbvxrlctthzcaxmrgqj.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_XrgK0YFnfvWRx1b_TwxQ8g_ROxkaQ9b";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const authView = document.getElementById("authView");
+  const appView = document.getElementById("appView");
+  const authStatus = document.getElementById("authStatus");
+  const authSubmitBtn = document.getElementById("authSubmitBtn");
+
+  document.getElementById("authForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("authEmail").value.trim();
+    const password = document.getElementById("authPassword").value;
+    authSubmitBtn.disabled = true;
+    authStatus.textContent = "Meldet an …";
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    authSubmitBtn.disabled = false;
+    if (error) { authStatus.textContent = "Fehler: " + error.message; return; }
+  });
+
+  document.getElementById("signOutBtn").addEventListener("click", () => sb.auth.signOut());
+
+  function showAuthed()    { authView.hidden = true;  appView.hidden = false; }
+  function showLoggedOut() { appView.hidden = true;   authView.hidden = false; }
+
+  sb.auth.onAuthStateChange((_event, session) => { session ? showAuthed() : showLoggedOut(); });
+  sb.auth.getSession().then(({ data: { session } }) => { session ? showAuthed() : showLoggedOut(); });
+</script>
+</body>
+</html>
