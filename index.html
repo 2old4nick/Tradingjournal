@@ -1257,6 +1257,10 @@
     .app-shell { display: none; }
     .app-shell.visible { display: flex; }
 
+    /* Trade-Drawer (53 Eingabefelder) ist vor der Anmeldung komplett ausgeblendet,
+       damit der Passwortmanager nur die Anmeldemaske sieht */
+    body:not(.app-active) .modal-drawer { display: none; }
+
     /* ── DB Loading Banner ── */
     #db-loading-banner {
       display: none;
@@ -5371,6 +5375,7 @@
   function showApp() {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-shell').classList.add('visible');
+    document.body.classList.add('app-active');
     document.getElementById('btn-logout').textContent = 'Abmelden';
   }
 
@@ -5379,6 +5384,7 @@
   function showLogin(msg = '') {
     appStarted = false;
     document.getElementById('app-shell').classList.remove('visible');
+    document.body.classList.remove('app-active');
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('login-error').textContent = msg;
   }
