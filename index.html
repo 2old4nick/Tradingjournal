@@ -2272,14 +2272,14 @@
     <div class="login-title">Anmelden</div>
     <div class="login-sub">Bitte melde dich mit deinem Konto an</div>
 
-    <form id="login-form" autocomplete="on" novalidate>
+    <form id="login-form">
       <div class="login-field">
         <label class="login-label" for="login-email">E-Mail</label>
-        <input type="email" id="login-email" name="username" class="login-input" placeholder="deine@email.de" autocomplete="username" autofocus>
+        <input type="email" id="login-email" class="login-input" required autocomplete="username">
       </div>
       <div class="login-field">
         <label class="login-label" for="login-password">Passwort</label>
-        <input type="password" id="login-password" name="password" class="login-input" placeholder="••••••••" autocomplete="current-password">
+        <input type="password" id="login-password" class="login-input" required autocomplete="current-password">
       </div>
 
       <button type="submit" class="login-btn" id="login-btn">Anmelden</button>
@@ -5386,8 +5386,9 @@
     await connectSupabase(); // Daten im Hintergrund laden
   }
 
-  // Login-Button
-  document.getElementById('login-btn').addEventListener('click', async () => {
+  // Login (Formular-Submit, wie beim Ausgaben-Tracker)
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
     const email    = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
     const errEl    = document.getElementById('login-error');
@@ -5410,9 +5411,6 @@
       btn.textContent = 'Anmelden';
     }
   });
-
-  // Formular nicht per Seiten-Reload absenden; Enter im Feld löst den Klick auf "Anmelden" aus
-  document.getElementById('login-form').addEventListener('submit', e => e.preventDefault());
 
   // Abmelden
   document.getElementById('btn-logout').addEventListener('click', async () => {
