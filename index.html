@@ -1146,7 +1146,7 @@
       inset: 0;
       background: var(--bg-base);
       z-index: 1000;
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
     }
@@ -5374,13 +5374,18 @@
     document.getElementById('btn-logout').textContent = 'Abmelden';
   }
 
+  let appStarted = false;
+
   function showLogin(msg = '') {
+    appStarted = false;
     document.getElementById('app-shell').classList.remove('visible');
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('login-error').textContent = msg;
   }
 
   async function initAfterLogin() {
+    if (appStarted) return;  // nicht doppelt starten
+    appStarted = true;
     showApp();               // App sofort anzeigen
     updateDashboard();       // leeres Dashboard rendern
     await connectSupabase(); // Daten im Hintergrund laden
@@ -5420,8 +5425,12 @@
     showLogin();
   });
 
-  // Session abgelaufen / ausgeloggt (z. B. in anderem Tab) -> Login zeigen
-  SB.auth.onAuthStateChange((event) => {
+  // Anmeldung/Abmeldung in anderem Tab bzw. Session abgelaufen
+  SB.auth.onAuthStateChange((event, session) => {
+    // In einem anderen Tab angemeldet -> hier ohne F5 in die App wechseln
+    if (event === 'SIGNED_IN' && session && !appStarted) {
+      setTimeout(initAfterLogin, 0);
+    }
     if (event === 'SIGNED_OUT') {
       AppState.trades = [];
       analyseList = [];
