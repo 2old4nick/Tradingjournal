@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login-Test 2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2"></script>
+  <style>
+    :root {
+      /* Hintergrundfarben */
+      --bg-base:        #0b0e14;
+      --bg-surface:     #111620;
+      --bg-card:        #161c28;
+      --bg-hover:       #1c2333;
+      --bg-input:       #131926;
+
+      /* Randfarben */
+      --border-subtle:  #1f2840;
+      --border-default: #263050;
+      --border-active:  #3d5080;
+
+      /* Primärfarbe (Akzent) */
+      --accent:         #4f8ef7;
+      --accent-dim:     #1e3a6e;
+      --accent-glow:    rgba(79, 142, 247, 0.15);
+
+      /* Status */
+      --green:          #22c97a;
+      --green-dim:      #0d3d25;
+      --red:            #f0455a;
+      --red-dim:        #3d1020;
+      --yellow:         #f5c542;
+      --yellow-dim:     #3d3010;
+
+      /* Text */
+      --text-primary:   #e8edf7;
+      --text-secondary: #7a8aaa;
+      --text-muted:     #3f4e6e;
+      --text-label:     #9aaabf;
+
+      /* Schriften */
+      --font-ui:        'DM Sans', sans-serif;
+      --font-mono:      'Space Mono', monospace;
+
+      /* Abstände & Radien */
+      --radius-sm:      4px;
+      --radius-md:      8px;
+      --radius-lg:      12px;
+      --sidebar-width:  280px;
+
+      /* Schatten */
+      --shadow-card:    0 2px 12px rgba(0,0,0,0.4);
+      --shadow-glow:    0 0 20px rgba(79, 142, 247, 0.08);
+    }
+
+    /* =============================================
+       RESET & BASE
+    ============================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    /* =============================================
+       LOGIN SCREEN
+    ============================================= */
+    .login-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-base);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: 40px 44px;
+      width: 380px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+
+    .login-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    .login-logo-icon {
+      width: 34px; height: 34px;
+      background: var(--accent);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .login-logo-name {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .login-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .login-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+    }
+
+    .login-field {
+      margin-bottom: 16px;
+    }
+
+    .login-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-label);
+      margin-bottom: 6px;
+    }
+
+    .login-input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      font-size: 14px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .login-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 11px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: var(--font-ui);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.15s;
+    }
+
+    .login-btn:hover { background: #3d7de8; }
+    .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .login-error {
+      font-size: 12px;
+      color: var(--red);
+      margin-top: 12px;
+      text-align: center;
+      min-height: 18px;
+    }
+
+    .app-shell { display: none; }
+    .app-shell.visible { display: flex; padding: 40px; }
+  </style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">TL</div>
+      <div class="login-logo-name">TradeLog</div>
+    </div>
+    <div class="login-title">Anmelden</div>
+    <div class="login-sub">Bitte melde dich mit deinem Konto an</div>
+
+    <form id="login-form">
+      <div class="login-field">
+        <label class="login-label" for="login-email">E-Mail</label>
+        <input type="email" id="login-email" class="login-input" required autocomplete="username">
+      </div>
+      <div class="login-field">
+        <label class="login-label" for="login-password">Passwort</label>
+        <input type="password" id="login-password" class="login-input" required autocomplete="current-password">
+      </div>
+
+      <button type="submit" class="login-btn" id="login-btn">Anmelden</button>
+    </form>
+    <div class="login-error" id="login-error"></div>
+
+  </div>
+</div>
+
+<div class="app-shell" id="app-shell">
+  <div>
+    <h2>Angemeldet (Test 2)</h2>
+    <p>Abmelden, dann Seite neu laden.</p>
+    <button id="btn-logout">Abmelden</button>
+  </div>
+</div>
+
+<script>
+  const SB = supabase.createClient("https://fsbvxrlctthzcaxmrgqj.supabase.co", "sb_publishable_XrgK0YFnfvWRx1b_TwxQ8g_ROxkaQ9b", {
+    auth: { persistSession: true, autoRefreshToken: true }
+  });
+
+  // Ein-/Ausblenden genau wie im Journal (style.display)
+  function showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-shell').classList.add('visible');
+  }
+  function showLogin(msg = '') {
+    document.getElementById('app-shell').classList.remove('visible');
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('login-error').textContent = msg;
+  }
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    const { error } = await SB.auth.signInWithPassword({ email, password });
+    if (error) { errEl.textContent = 'Anmeldung fehlgeschlagen: ' + error.message; }
+  });
+  document.getElementById('btn-logout').addEventListener('click', () => SB.auth.signOut());
+
+  SB.auth.onAuthStateChange((event, session) => { session ? showApp() : showLogin(); });
+  SB.auth.getSession().then(({ data }) => { data && data.session ? showApp() : showLogin(); });
+</script>
+</body>
+</html>
